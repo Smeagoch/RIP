@@ -1,0 +1,16 @@
+#ifndef RIP_PROTOCOL_HPP
+#define RIP_PROTOCOL_HPP
+
+#define RIP_PORT        520
+#define RIP_VERSION     2
+#define RIP_COMMAND_REQUEST 1
+#define RIP_COMMAND_REPLY   2
+#define MAX_RIP_ENTRIES 25
+#define MAX_RIP_METRIC  16
+
+#define RIP_MCAST_ADDR  "224.0.0.9"
+
+#define RIP_EXPIRE_TIME 15
+#define RIP_UPDATE_TIME 30
+
+#endif /* RIP_PROTOCOL_HPP */

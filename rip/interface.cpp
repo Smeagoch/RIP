@@ -18,10 +18,7 @@ void interface_show()
         std::cout << "DEBUG: " << "Interface configuration:" << std::endl;
         std::cout << "  interface : " << iface->name << std::endl;
         std::cout << "    index: " << iface->index << std::endl;
-        std::cout << "    address: " << (iface->address >> 24) << "."
-                  << ((iface->address >> 16) & 0xFF) << "."
-                  << ((iface->address >> 8) & 0xFF) << "."
-                  << (iface->address & 0xFF) << std::endl;;
+        std::cout << "    address: " << iface->address.to_string() << std::endl;;
     });
 }
 #endif
@@ -76,8 +73,8 @@ interface *interface_get_by_index(uint32_t index)
 bool interface_join_mcast_group(rip_socket &sock)
 {
     std::for_each(interface_list.begin(), interface_list.end(), [&sock](std::shared_ptr<interface> iface) {
-        if (!(iface->flags & interface_flag_passive) && iface->address != 0) {
-            sock.join_mcast_group(asio::ip::address_v4(iface->address));
+        if (!(iface->flags & interface_flag_passive) && !iface->address.is_unspecified()) {
+            sock.join_mcast_group(iface->address);
         }
     });
 

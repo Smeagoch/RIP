@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
     netlink_init();
     // rip_sock.join_mcast_group(buf);
     rip_sock.async_read();
+    rip_sock.update_init();
 
     // if (strlen(buf) != 0)
     //  std::cout << "no null" << std::endl;

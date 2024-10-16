@@ -232,11 +232,11 @@ static void netlink_addr_new(struct nlmsghdr *msg) {
         /* TODO: handle IPv6 address */
         if (ifa->ifa_family == PF_INET)
         {
-            iface->address = ntohl(*((uint32_t *)RTA_DATA(rta[IFA_ADDRESS])));
+            iface->address = asio::ip::address_v4(ntohl(*((uint32_t *)RTA_DATA(rta[IFA_ADDRESS]))));
             iface->address_prefix = ifa->ifa_prefixlen;
 
-            if (!(iface->flags & interface_flag_passive) && iface->address != 0) {
-                rip_sock.join_mcast_group(asio::ip::address_v4(iface->address));
+            if (!(iface->flags & interface_flag_passive) && !iface->address.is_unspecified()) {
+                rip_sock.join_mcast_group(iface->address);
             }
         } 
 

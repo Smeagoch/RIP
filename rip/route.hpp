@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <cstring>
+#include <asio.hpp>
 
 #include "common.hpp"
 #include "interface.hpp"
@@ -30,8 +31,8 @@ public:
     uint8_t type;
     uint8_t flags;
 
-    uint32_t dst_address;
-    uint32_t gateway;
+    asio::ip::address_v4 dst_address;
+    asio::ip::address_v4 gateway;
 
     uint8_t prefix;
     uint32_t metric;
@@ -44,9 +45,6 @@ public:
     {
         type = 0;
         flags = 0;
-
-        dst_address = 0;
-        gateway = 0;
 
         prefix = 0;
         metric = 0;

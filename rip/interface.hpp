@@ -24,7 +24,7 @@ struct interface {
 	uint32_t route_table;
 	uint16_t afnum;
 	/* TODO: storing few address on iface */
-	uint32_t address;
+	asio::ip::address_v4 address;
 	uint8_t address_prefix;
 
 	std::unordered_map<int, std::shared_ptr<struct route>> route_htable;
@@ -35,7 +35,6 @@ struct interface {
 		this->flags = 0;
 		this->route_table = 0;
 		this->afnum = 0;
-		this->address = 0;
 	}
 };
 

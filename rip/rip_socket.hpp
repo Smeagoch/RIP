@@ -19,7 +19,10 @@ private:
     uint8_t buf_[8192];
     uint8_t cmsgbuf_[CMSG_SPACE(sizeof(struct in_pktinfo))];
 
+    asio::steady_timer update_timer;
+
     void read_cb(std::size_t length, uint32_t ifi_index);
+    void update_cb();
 
 public:
     rip_socket(asio::io_service &service_);
@@ -27,6 +30,7 @@ public:
 
     void open();
     void async_read();
+    void update_init();
     void join_mcast_group(asio::ip::address_v4 local_addr);
     void close();
 };

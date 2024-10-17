@@ -10,9 +10,10 @@
 #include <linux/rtnetlink.h>
 
 #include "common.hpp"
-#include "system_netlink.hpp"
 #include "interface.hpp"
 #include "route.hpp"
+#include "system_netlink.hpp"
+#include "rip_socket.hpp"
 
 static void netlink_parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len)
 {
@@ -175,7 +176,7 @@ static void netlink_link_new(struct nlmsghdr *msg)
         return;
 
     char *ifname = ((char*)RTA_DATA(rta[IFLA_IFNAME]));
-    std::shared_ptr<interface> iface = interface_get_shared_by_name(ifname, true);
+    interface *iface = interface_get_by_name(ifname, true);
 
     if (iface == nullptr)
         return;
@@ -206,7 +207,7 @@ static void netlink_link_del(struct nlmsghdr *msg)
         return;
 
     char *ifname = ((char*)RTA_DATA(rta[IFLA_IFNAME]));
-    std::shared_ptr<interface> iface = interface_get_shared_by_name(ifname, false);
+    interface *iface = interface_get_by_name(ifname, false);
     if (iface == NULL)
         return;
 

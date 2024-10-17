@@ -7,8 +7,11 @@
 #include <memory>
 
 #include "interface.hpp"
+#include "route.hpp"
 
 struct rip_entry {
+    uint32_t ifi_index;
+
     uint16_t af_id;
     uint16_t route_tag;
     asio::ip::address_v4 dst_address;
@@ -17,19 +20,14 @@ struct rip_entry {
     uint32_t metric;
 };
 
-struct ext_rip_entry {
-    struct interface *iface;
-    rip_entry entry;
-};
-
 class rip_packet {
 private:
-    struct interface *src_iface;
+    uint32_t src_ifi_index;
 
     uint8_t command;
     uint8_t version;
     uint16_t reserved;
-    std::vector<ext_rip_entry> rip_list;
+    std::vector<rip_entry> rip_list;
 
 public:
     void set_command(uint8_t command) { this->command = command; }

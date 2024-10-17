@@ -14,12 +14,14 @@
 #include "common.hpp"
 #include "interface.hpp"
 #include "rip_socket.hpp"
+#include "rip_packet.hpp"
+#include "rip_protocol.hpp"
 #include "system_netlink.hpp"
 
 #define RIP_CONF_FILE "/etc/rip/rip.conf"
 
 asio::io_context service;
-rip_socket rip_sock(service);
+rip_socket<rip_packet, RIP_PORT> rip_sock(service);
 
 void signal_handler(const asio::error_code & err, int signal) 
 {

@@ -8,7 +8,6 @@ set(SOURCE_FILES
     ${SRC_DIR}/interface.cpp
     ${SRC_DIR}/route.cpp
     ${SRC_DIR}/rip_packet.cpp
-    ${SRC_DIR}/rip_socket.cpp
     ${SRC_DIR}/system_netlink.cpp
     ${SRC_DIR}/rip.cpp
 )

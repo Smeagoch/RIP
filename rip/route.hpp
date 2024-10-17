@@ -8,10 +8,8 @@
 #include <asio.hpp>
 
 #include "common.hpp"
-#include "interface.hpp"
 
 struct route;
-// struct rt_table;
 
 extern std::unordered_map<int, std::shared_ptr<route>> route_table;
 
@@ -24,9 +22,9 @@ extern std::unordered_map<int, std::shared_ptr<route>> route_table;
 
 #define route_flag_up 0x01
 
-class route {
+struct route {
 public:
-    std::shared_ptr<struct interface> iface;
+    uint32_t ifi_index;
 
     uint8_t type;
     uint8_t flags;
@@ -43,6 +41,7 @@ public:
 
     route() : timer(service)
     {
+        ifi_index = 0;
         type = 0;
         flags = 0;
 
@@ -52,17 +51,5 @@ public:
         hop = 0;
     }
 };
-
-// class rt_table {
-// private:
-//     std::unordered_map<int, std::shared_ptr<route>> htable;
-
-// public:
-//     rt_table() {htable.reserve(1000);}
-//     ~rt_table() = default;
-
-//     bool update(struct rip_entry entry, interface *iface);
-//     bool remove(uint32_t dst);
-// };
 
 #endif /* ROUTE_HPP */

@@ -30,6 +30,7 @@ void signal_handler(const asio::error_code & err, int signal)
     case SIGINT:
         rip_sock.close();
         netlink_close();
+        interface_cleanup();
         break;
     
     default:

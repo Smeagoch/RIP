@@ -36,6 +36,7 @@ struct interface {
 void interface_show();
 interface *interface_get_by_name(const char *iface_name, bool create);
 interface *interface_get_by_index(uint32_t index);
+void interface_cleanup();
 
 /* for_each functions */
 

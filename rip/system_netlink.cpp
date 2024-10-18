@@ -236,7 +236,8 @@ static void netlink_addr_new(struct nlmsghdr *msg) {
             iface->address = asio::ip::address_v4(ntohl(*((uint32_t *)RTA_DATA(rta[IFA_ADDRESS]))));
             iface->address_prefix = ifa->ifa_prefixlen;
 
-            if (!(iface->flags & interface_flag_passive) && !iface->address.is_unspecified()) {
+            if (!(iface->flags & interface_flag_passive) &&
+                    !iface->address.is_unspecified()) {
                 rip_sock.join_mcast_group(iface->address);
             }
         } 

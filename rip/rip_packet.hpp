@@ -6,7 +6,6 @@
 #include <vector>
 #include <memory>
 
-#include "interface.hpp"
 #include "route.hpp"
 
 struct rip_entry {
@@ -33,15 +32,15 @@ public:
     void set_command(uint8_t command) { this->command = command; }
     void set_version(uint8_t version) { this->version = version; }
 
-    bool unmarshall(uint8_t *pdu, uint32_t pdu_len);
-    uint16_t marshall(uint8_t *pdu, uint32_t pdu_len);
+    void unmarshall(uint8_t *pdu, uint32_t pdu_len);
+    uint16_t marshall(uint8_t *pdu, uint32_t pdu_len, uint32_t iface_index);
     bool handle();
     bool add_entry(route *rt);
     uint8_t entry_list_size();
     void entry_list_clear();
     void print();
 
-    bool get_iface(uint32_t ifi_index);
+    void set_iface(uint32_t ifi_index);
 };
 
 #endif /* RIP_PACKET_HPP */

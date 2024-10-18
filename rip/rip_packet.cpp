@@ -5,16 +5,15 @@
 #include "common.hpp"
 #include "rip_protocol.hpp"
 #include "rip_packet.hpp"
+#include "interface.hpp"
 #include "route.hpp"
 
-bool rip_packet::get_iface(uint32_t ifi_index)
+void rip_packet::set_iface(uint32_t ifi_index)
 {
     this->src_ifi_index = ifi_index;
-
-    return true;
 }
 
-bool rip_packet::unmarshall(uint8_t *pdu, uint32_t pdu_len)
+void rip_packet::unmarshall(uint8_t *pdu, uint32_t pdu_len)
 {
     if (pdu_len < RIP_HDR_SIZE)
         throw std::runtime_error("Invalid RIP packet length");
@@ -53,22 +52,25 @@ bool rip_packet::unmarshall(uint8_t *pdu, uint32_t pdu_len)
         
         this->rip_list.push_back(entry);
     }
-
-    return true;
 }
 
-uint16_t rip_packet::marshall(uint8_t *pdu, uint32_t pdu_len)
+uint16_t rip_packet::marshall(uint8_t *pdu, uint32_t pdu_len, uint32_t iface_index)
 {
     if (pdu_len < RIP_HDR_SIZE)
-        throw std::runtime_error("Invalid RIP packet length");
-    
-    pdu[0] = this->command;
-    pdu[1] = this->version;
+        throw std::runtime_error("Not enough space in buffer");
+
+    interface * iface = interface_get_by_index(iface_index);
+
+    if (iface == nullptr)
+        throw std::runtime_error("Cannot find device by index");
 
     size_t offset = RIP_HDR_SIZE;
     for (auto entry : this->rip_list) {
         if (offset + RIP_ENTRY_SIZE > pdu_len)
-            throw std::runtime_error("Invalid RIP packet length");
+            throw std::runtime_error("Not enough space in buffer");
+
+        if (entry.ifi_index == iface_index)
+            continue;
 
         *((uint16_t*) &pdu[offset]) = entry.af_id;
         offset += sizeof(uint16_t);
@@ -82,12 +84,18 @@ uint16_t rip_packet::marshall(uint8_t *pdu, uint32_t pdu_len)
         *((uint32_t*) &pdu[offset]) = entry.subnet_mask;
         offset += sizeof(uint32_t);
 
-        *((uint32_t*) &pdu[offset]) = htonl(entry.next_hop_address.to_uint());
+        *((uint32_t*) &pdu[offset]) = htonl(iface->address.to_uint());
         offset += sizeof(uint32_t);
 
         *((uint32_t*) &pdu[offset]) = entry.metric;
         offset += sizeof(uint32_t);
     }
+
+    if (offset == RIP_HDR_SIZE)
+        return 0;
+
+    pdu[0] = this->command;
+    pdu[1] = this->version;
 
     return offset;
 }
@@ -109,7 +117,7 @@ bool rip_packet::handle() {
         auto rt = route_table.find(entry.dst_address.to_uint());
         if (rt != route_table.end()) {
             rt_ptr = rt->second.get();
-            if (rt_ptr->metric < entry.metric)
+            if (rt_ptr->metric < entry.metric + 1)
                 return false;
         }
 
@@ -140,7 +148,7 @@ bool rip_packet::handle() {
             is_change = true;
         }
 
-        rt_ptr->metric = entry.metric;
+        rt_ptr->metric = entry.metric + 1;
 
         /* TODO: if is_change need update system route */
 

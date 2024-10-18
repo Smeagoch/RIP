@@ -4,13 +4,15 @@
 #include <iostream>
 #include <cstdint>
 #include <string>
-#include <unordered_map>
+#include <list>
 #include <memory>
 
 #define interface_flag_running 0x0001
 #define interface_flag_passive 0x0100
 
-// extern std::list<interface> interface_list;
+struct interface;
+
+extern std::list<interface*> interface_list;
 
 struct interface {
 	/* Configured information */

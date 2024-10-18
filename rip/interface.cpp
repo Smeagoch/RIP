@@ -28,14 +28,14 @@ interface *interface_get_by_name(const char *iface_name, bool create)
     interface *iface_ptr = nullptr;
 
     if (!interface_list.empty()) {
-        for ( interface *iface : interface_list) {
+        for (interface *iface : interface_list) {
             if (iface->name.compare(iface_name) == 0)
                 iface_ptr = iface;
         }
     }
 
     if (iface_ptr == nullptr & create) {
-        interface *iface = new interface(iface_name); // std::make_shared<interface>(interface(iface_name));
+        interface *iface = new interface(iface_name);
         interface_list.push_back(iface);
         iface_ptr = iface;
     }

@@ -52,4 +52,6 @@ public:
     }
 };
 
+void route_cleanup();
+
 #endif /* ROUTE_HPP */

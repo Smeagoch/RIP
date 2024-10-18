@@ -9,6 +9,7 @@
 
 #include "common.hpp"
 #include "route.hpp"
+#include "interface.hpp"
 #include "rip_protocol.hpp"
 #include "rip_socket.hpp"
 #include "rip_packet.hpp"
@@ -55,10 +56,15 @@ void rip_socket<T, port>::read_cb(std::size_t length, uint32_t ifi_index)
 {
     T packet;
 
-    if (!packet.get_iface(ifi_index))
-        return;
+    packet.set_iface(ifi_index);
 
-    packet.unmarshall(this->buf_, length);
+    try {
+        packet.unmarshall(this->buf_, length);
+    } catch (const char *error_message) {
+        std::cerr << "Failed to unmarshalling packet: " << error_message << std::endl;
+        return;
+    }
+    
 
 #ifdef DEBUG
     std::cout << "DEBUG: " << "Receive RIP packet:" << std::endl;
@@ -72,10 +78,41 @@ template <typename T, uint32_t port>
 void rip_socket<T, port>::update_cb()
 {
     constexpr  std::size_t buff_size = RIP_ENTRY_SIZE * MAX_RIP_ENTRIES + RIP_HDR_SIZE;
-    uint8_t buff[buff_size];
+    uint8_t buff[buff_size] = {0};
 
     T packet;
-    asio::ip::udp::endpoint multicast_enpoint(asio::ip::make_address(RIP_MCAST_ADDR), RIP_PORT);
+
+    auto send = [this, &packet, buff, &buff_size](const interface *iface) {
+                if (iface->flags & interface_flag_passive)
+                    return;
+
+                if (!(iface->flags & interface_flag_running))
+                    return;
+
+                if (iface->name.compare("lo") == 0)
+                    return;
+
+                if (iface->address.is_unspecified())
+                    return;
+
+                uint16_t len = 0;
+                try {
+                    len = packet.marshall((uint8_t *)buff, buff_size, iface->index);
+                } catch (const char *message) {
+                    std::cerr << "ERROR: Failed to marshalling packet to " 
+                            << iface->name << ": " << message << std::endl;
+                    return;
+                }
+                if (len == 0)
+                    return;
+#ifdef DEBUG
+                std::cout << "DEBUG: Sending rip packet to " << iface->name
+                        << " (len " << len << ")" << std::endl;
+#endif
+                this->sock_.set_option(asio::ip::multicast::outbound_interface(iface->address));
+                asio::ip::udp::endpoint multicast_enpoint(asio::ip::make_address(RIP_MCAST_ADDR), RIP_PORT);
+                this->sock_.send_to(asio::const_buffer(buff, len), multicast_enpoint);
+    };
 
     packet.set_command(RIP_COMMAND_RESPONSE);
     packet.set_version(RIP_VERSION);
@@ -84,19 +121,13 @@ void rip_socket<T, port>::update_cb()
         packet.add_entry(pair.second.get());
 
         if (packet.entry_list_size() == MAX_RIP_ENTRIES) {
-            uint16_t len = packet.marshall(buff, buff_size);
-            std::cout << "INFO: Sending rip packet (len " << len << ")" << std::endl;
-            this->sock_.send_to(asio::const_buffer(buff, len), multicast_enpoint);
+            std::for_each(interface_list.begin(), interface_list.end(), send);
             packet.entry_list_clear();
         }
     }
 
-    if (packet.entry_list_size() != 0) {
-        uint16_t len = packet.marshall(buff, buff_size);
-        std::cout << "INFO: Sending rip packet (len " << len << ")" << std::endl;
-        sock_.set_option(asio::ip::multicast::outbound_interface(asio::ip::address_v4::from_string("100.100.11.2")));
-        this->sock_.send_to(asio::const_buffer(buff, len), multicast_enpoint);
-    }
+    if (packet.entry_list_size() != 0)
+        std::for_each(interface_list.begin(), interface_list.end(), send);
 }
 
 template <typename T, uint32_t port>
@@ -148,7 +179,9 @@ void rip_socket<T, port>::async_read()
             if (ec == asio::error::operation_aborted)
                     return;
 
-            if (!ec) {
+            if (ec) {
+                std::cerr << "ERROR: rip_socket receive error: " << ec.message() << std::endl;
+            } else {
                 struct cmsghdr* cmsg = nullptr;
                 struct in_pktinfo* pktinfo = nullptr;
 
@@ -168,7 +201,7 @@ void rip_socket<T, port>::async_read()
                 if (pktinfo) {
                     read_cb(status, pktinfo->ipi_ifindex);
                 } else {
-                    throw std::runtime_error("IP_PKTINFO: emply control message");
+                    std::cerr << "ERROR: IP_PKTINFO: emply control message" << std::endl;
                 }
             }
             async_read();
@@ -186,11 +219,10 @@ void rip_socket<T, port>::close()
 template <typename T, uint32_t port>
 void rip_socket<T, port>::join_mcast_group(asio::ip::address_v4 local_addr)
 {
-    std::cerr << "join group : " << local_addr.to_string() << std::endl;
+    std::cerr << "INFO: join group : " << local_addr.to_string() << std::endl;
     this->sock_.set_option(asio::ip::multicast::join_group(
         asio::ip::address::from_string(RIP_MCAST_ADDR).to_v4(),
         local_addr));
-        
 }
 
 #endif /* RIP_SOCKET_HPP */

@@ -29,6 +29,7 @@ void signal_handler(const asio::error_code & err, int signal)
     {
     case SIGINT:
         rip_sock.close();
+        route_cleanup();
         netlink_close();
         interface_cleanup();
         break;
@@ -63,14 +64,12 @@ int main(int argc, char *argv[])
 { 
     // if (!load_conf())
     //     return 1;
-    // char buf[20] = "100.100.11.2\0";
 
     asio::signal_set sig(service, SIGINT, SIGTERM);
     sig.async_wait(signal_handler);
 
     rip_sock.open();
     netlink_init();
-    // rip_sock.join_mcast_group(buf);
     rip_sock.async_read();
     rip_sock.update_init();
 

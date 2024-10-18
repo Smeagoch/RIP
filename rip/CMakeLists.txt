@@ -9,6 +9,7 @@ set(SOURCE_FILES
     ${SRC_DIR}/route.cpp
     ${SRC_DIR}/rip_packet.cpp
     ${SRC_DIR}/system_netlink.cpp
+    ${SRC_DIR}/rip_config.cpp
     ${SRC_DIR}/rip.cpp
 )
 

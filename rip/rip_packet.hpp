@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 
+#include "common.hpp"
 #include "route.hpp"
 
 struct rip_entry {

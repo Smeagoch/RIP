@@ -3,25 +3,21 @@
 #include <fstream>
 #include <string>
 #include <cstring>
-
 #include <signal.h>
-
-#define BOOST_ASIO_ENABLE_HANDLER_TRACKING
 #include <asio.hpp>
-// #include <boost/asio.hpp>
-// #include "rip_peer.hpp"
 
 #include "common.hpp"
 #include "interface.hpp"
+#include "rip_config.hpp"
 #include "rip_socket.hpp"
 #include "rip_packet.hpp"
 #include "rip_protocol.hpp"
 #include "system_netlink.hpp"
-
 #define RIP_CONF_FILE "/etc/rip/rip.conf"
 
 asio::io_context service;
 rip_socket<rip_packet, RIP_PORT> rip_sock(service);
+rip_config configuration;
 
 void signal_handler(const asio::error_code & err, int signal) 
 {
@@ -40,30 +36,13 @@ void signal_handler(const asio::error_code & err, int signal)
     }
 }
 
-bool load_conf()
-{
-    std::string conf_str;
-    std::ifstream conf_file(RIP_CONF_FILE);
-    if (!conf_file.is_open())
-        return false;
-
-    while (std::getline(conf_file, conf_str)) {
-        char *word = std::strtok(conf_str.data(), " \n");
-        if (strcmp(word, "network ")) {
-            word = std::strtok(nullptr, " \n");
-            if (strcmp(word, "10.10.10.10/24"))
-                std::cout << word << std::endl; 
-        }
-    }
-
-    conf_file.close();
-    return true;
-}
-
 int main(int argc, char *argv[])
 { 
-    // if (!load_conf())
-    //     return 1;
+
+    configuration.load(RIP_CONF_FILE);
+#ifdef DEBUG
+    configuration.print();
+#endif
 
     asio::signal_set sig(service, SIGINT, SIGTERM);
     sig.async_wait(signal_handler);

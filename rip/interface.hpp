@@ -7,6 +7,8 @@
 #include <list>
 #include <memory>
 
+#include "common.hpp"
+
 #define interface_flag_running 0x0001
 #define interface_flag_passive 0x0100
 

@@ -2,7 +2,6 @@
 #include <sys/socket.h>
 #include <asio.hpp>
 
-#include "common.hpp"
 #include "rip_protocol.hpp"
 #include "rip_packet.hpp"
 #include "interface.hpp"

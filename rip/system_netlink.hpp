@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <asio.hpp>
 
+#include "common.hpp"
+
 template <typename Protocol>
 class nl_endpoint
 {

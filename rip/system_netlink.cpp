@@ -9,10 +9,11 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
-#include "common.hpp"
+#include "system_netlink.hpp"
+
 #include "interface.hpp"
 #include "route.hpp"
-#include "system_netlink.hpp"
+#include "rip_config.hpp"
 #include "rip_socket.hpp"
 
 static void netlink_parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len)
@@ -180,6 +181,9 @@ static void netlink_link_new(struct nlmsghdr *msg)
 
     if (iface == nullptr)
         return;
+
+    if (configuration.is_passive_iface(ifname))
+        iface->flags |= interface_flag_passive;
 
     if (ifi->ifi_flags & IFF_RUNNING)
         iface->flags |= interface_flag_running;

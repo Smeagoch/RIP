@@ -6,7 +6,6 @@
 #include <memory>
 #include <array>
 
-#include "common.hpp"
 #include "interface.hpp"
 
 std::list<interface*> interface_list;

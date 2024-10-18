@@ -185,10 +185,15 @@ static void netlink_link_new(struct nlmsghdr *msg)
     if (configuration.is_passive_iface(ifname))
         iface->flags |= interface_flag_passive;
 
-    if (ifi->ifi_flags & IFF_RUNNING)
+    if (ifi->ifi_flags & IFF_RUNNING) {
         iface->flags |= interface_flag_running;
-    else
+    } else {
         iface->flags &= ~interface_flag_running;
+
+        route_selector sel;
+        sel.ifi_index = iface->index;
+        route_remove_matching(&sel);
+    }
 
     if (((ifi->ifi_change & IFF_UP) || (iface->index == 0)) &&
       (ifi->ifi_flags & IFF_UP))
@@ -217,10 +222,12 @@ static void netlink_link_del(struct nlmsghdr *msg)
 
     std::cout << "INFO: " << "Interface " << ifname << " deleted" << std::endl;
     iface->flags &= ~interface_flag_running;
-    iface->index = 0;
 
-    // address_set_type(&iface->nbma_address, PF_UNSPEC);
-    // address_set_type(&iface->protocol_address, PF_UNSPEC);
+    route_selector sel;
+    sel.ifi_index = iface->index;
+    route_remove_matching(&sel);
+
+    iface->index = 0;
 }
 
 static void netlink_addr_new(struct nlmsghdr *msg) {

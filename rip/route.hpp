@@ -11,7 +11,7 @@
 
 struct route;
 
-extern std::unordered_map<int, std::shared_ptr<route>> route_table;
+extern std::unordered_map<std::string, std::shared_ptr<route>> route_table;
 
 #define route_type_static 0x01  /* static entry for configuration */
 #define route_type_dynamic 0x02 /* dynamic entry for neighbor */
@@ -29,10 +29,10 @@ public:
     uint8_t type;
     uint8_t flags;
 
-    asio::ip::address_v4 dst_address;
-    asio::ip::address_v4 gateway;
+    asio::ip::address dst_address;
+    asio::ip::address gateway;
 
-    uint8_t prefix;
+    uint32_t prefix;
     uint32_t metric;
 
     uint32_t hop;
@@ -52,6 +52,24 @@ public:
     }
 };
 
+struct route_selector {
+    uint32_t ifi_index;
+    uint8_t type;
+    asio::ip::address dst_address;
+    uint8_t prefix;
+    asio::ip::address gateway;
+
+    route_selector()
+    {
+        uint8_t type = 0;
+        ifi_index = 0;
+        prefix = 0;
+    }
+};
+uint32_t route_v4_submask(uint32_t prefix);
+uint32_t route_v4_prefix(uint32_t subnet_mask);
+
+void route_remove_matching(route_selector *sel);
 void route_cleanup();
 
 #endif /* ROUTE_HPP */

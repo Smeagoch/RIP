@@ -113,7 +113,7 @@ bool rip_packet::handle() {
         if (entry.metric >= MAX_RIP_METRIC)
             continue;
 
-        auto rt = route_table.find(entry.dst_address.to_uint());
+        auto rt = route_table.find(entry.dst_address.to_string());
         if (rt != route_table.end()) {
             rt_ptr = rt->second.get();
             if (rt_ptr->metric < entry.metric + 1)
@@ -122,11 +122,12 @@ bool rip_packet::handle() {
 
         if (rt_ptr == nullptr) {
 #ifdef DEBUG
-            std::cout << "DEBUG: " << "Adding new route to " << entry.dst_address.to_string() << " metric " << entry.metric << std::endl;
+            std::cout << "DEBUG: " << "Adding new route to " << entry.dst_address.to_string() 
+                    << "/" << route_v4_prefix(entry.subnet_mask) << " metric " << entry.metric << std::endl;
 #endif
             auto new_route = std::make_shared<route>(route());
             new_route->dst_address = entry.dst_address;
-            route_table.insert(std::make_pair(new_route->dst_address.to_uint(), new_route));
+            route_table.insert(std::make_pair(new_route->dst_address.to_v4().to_string(), new_route));
             rt_ptr = new_route.get();
         }
 
@@ -136,14 +137,14 @@ bool rip_packet::handle() {
             is_change = true;
         }
 
-        if (rt_ptr->gateway != entry.next_hop_address) {
+        if (rt_ptr->gateway.to_v4() != entry.next_hop_address) {
             rt_ptr->gateway = entry.next_hop_address;
             is_change = true;
         }
 
-        if (rt_ptr->prefix != entry.subnet_mask) {
-            rt_ptr->prefix = entry.subnet_mask;
-            // TODO: maybe set prefix for address
+        if (rt_ptr->prefix != route_v4_prefix(entry.subnet_mask)) {
+            rt_ptr->prefix = route_v4_prefix(entry.subnet_mask);
+            /* TODO: maybe set prefix for address */
             is_change = true;
         }
 
@@ -164,7 +165,7 @@ bool rip_packet::handle() {
                 std::cout << "DEBUG: " << "Removing expired route to " << rt_ptr->dst_address.to_string()
                         << " metric " << rt_ptr->metric << std::endl;
 #endif
-                route_table.erase(rt_ptr->dst_address.to_uint());
+                route_table.erase(rt_ptr->dst_address.to_string());
             });
     }
 
@@ -176,15 +177,15 @@ bool rip_packet::add_entry(route *rt)
     rip_entry entry;
     entry.ifi_index = rt->ifi_index;
     entry.af_id = PF_INET;
-    entry.dst_address = rt->dst_address;
+    entry.dst_address = rt->dst_address.to_v4();
     entry.metric = rt->hop;
 
     if (!entry.next_hop_address.is_unspecified())
-        entry.next_hop_address = rt->gateway;
+        entry.next_hop_address = rt->gateway.to_v4();
     else
         entry.next_hop_address = interface_get_by_index(entry.ifi_index)->address;
     entry.route_tag = 0;
-    entry.subnet_mask = rt->prefix;
+    entry.subnet_mask = route_v4_submask(rt->prefix);
 
     this->rip_list.push_back(entry);
     

@@ -83,7 +83,7 @@ bool rip_config::is_passive_iface(const char * ifname)
     return false;
 }
 
-bool rip_config::is_conf_network(std::string address, uint8_t prefix_length) {
+bool rip_config::is_conf_network(std::string address, uint32_t prefix_length) {
     for (auto net : networks) {
         if (net.address == address &&
                 net.prefix_length == prefix_length)

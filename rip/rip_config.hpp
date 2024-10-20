@@ -28,7 +28,7 @@ public:
     void print();
 #endif
     bool is_passive_iface(const char *ifname);
-    bool is_conf_network(std::string address, uint8_t prefix_length);
+    bool is_conf_network(std::string address, uint32_t prefix_length);
 };
 
 #endif /* RIP_CONFIG_H */

@@ -71,22 +71,22 @@ uint16_t rip_packet::marshall(uint8_t *pdu, uint32_t pdu_len, uint32_t iface_ind
         if (entry.ifi_index == iface_index)
             continue;
 
-        *((uint16_t*) &pdu[offset]) = entry.af_id;
+        *((uint16_t*) &pdu[offset]) = htons(entry.af_id);
         offset += sizeof(uint16_t);
 
-        *((uint16_t*) &pdu[offset]) = entry.route_tag;
+        *((uint16_t*) &pdu[offset]) = htons(entry.route_tag);
         offset += sizeof(uint16_t);
 
         *((uint32_t*) &pdu[offset]) = htonl(entry.dst_address.to_uint());
         offset += sizeof(uint32_t);
 
-        *((uint32_t*) &pdu[offset]) = entry.subnet_mask;
+        *((uint32_t*) &pdu[offset]) = htonl(entry.subnet_mask);
         offset += sizeof(uint32_t);
 
         *((uint32_t*) &pdu[offset]) = htonl(iface->address.to_uint());
         offset += sizeof(uint32_t);
 
-        *((uint32_t*) &pdu[offset]) = entry.metric;
+        *((uint32_t*) &pdu[offset]) = htonl(entry.metric);
         offset += sizeof(uint32_t);
     }
 

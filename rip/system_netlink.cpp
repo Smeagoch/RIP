@@ -42,7 +42,7 @@ enum {
     MAX_FD
 };
 
-std::vector<std::shared_ptr<netlink_socket>> netlink_fd;
+std::vector<netlink_socket> netlink_fd;
 
 typedef void (*netlink_dispatch_f)(struct nlmsghdr *msg);
 
@@ -264,6 +264,40 @@ static void netlink_route_new(struct nlmsghdr *msg)
 
     netlink_parse_rtattr(rta, RTA_MAX, RTM_RTA(rtm), RTM_PAYLOAD(msg));
 
+    if (rta[RTA_OIF] == NULL || rta[RTA_DST] == NULL)
+		return;
+
+    interface *iface = interface_get_by_index(*(uint8_t*)RTA_DATA(rta[RTA_OIF]));
+    if (iface == nullptr)
+        return;
+
+    if (rtm->rtm_table != RT_TABLE_MAIN)
+        return;
+
+    if (rtm->rtm_family == PF_INET) {
+        asio::ip::address dst_address = asio::ip::address_v4(ntohl(*(uint32_t*)RTA_DATA(rta[RTA_DST])));
+        std::cout << dst_address.to_string() << std::endl;
+        uint32_t prefix = rtm->rtm_dst_len;
+
+        if (configuration.is_conf_network(dst_address.to_string(), prefix)) {
+#ifdef DEBUG
+            std::cout << "DEBUG: Adding static route to " << dst_address.to_string() << "/" << prefix << std::endl;
+#endif
+            auto new_route = std::make_shared<route>(route());
+            new_route->dst_address = dst_address;
+            new_route->prefix = prefix;
+            new_route->ifi_index = iface->index;
+
+            if (rta[RTA_GATEWAY] != NULL)
+                new_route->gateway =  asio::ip::address_v4(ntohl(*(uint8_t*)RTA_DATA(rta[RTA_GATEWAY])));
+
+            new_route->type = route_type_static;
+            new_route->flags = route_flag_up;
+            new_route->hop = 1;
+
+            route_table.insert(std::make_pair(new_route->dst_address.to_v4().to_string(), new_route));
+        }
+    }
 }
 
 static void netlink_route_del(struct nlmsghdr *msg)
@@ -273,6 +307,14 @@ static void netlink_route_del(struct nlmsghdr *msg)
 
     netlink_parse_rtattr(rta, RTA_MAX, RTM_RTA(rtm), RTM_PAYLOAD(msg));
 
+    if (rta[RTA_OIF] == NULL || rta[RTA_DST] == NULL)
+		return;
+
+    if (rtm->rtm_family == PF_INET) {
+        asio::ip::address dst_address = asio::ip::address_v4(ntohl(*(uint32_t*)RTA_DATA(rta[RTA_DST])));
+        std::cout << "DEBUG: Adding static route to " << dst_address.to_string() << "/" << rtm->rtm_dst_len << std::endl;
+        route_table.erase(dst_address.to_string());
+    }
 }
 
 static void netlink_dump(uint32_t nlmsg_type)
@@ -287,11 +329,11 @@ static void netlink_dump(uint32_t nlmsg_type)
     req.nlh.nlmsg_type = nlmsg_type;
     req.nlh.nlmsg_flags = NLM_F_DUMP | NLM_F_REQUEST;
     req.nlh.nlmsg_pid = getpid();
-    req.nlh.nlmsg_seq =  netlink_fd[TALK_FD]->increase_seq();
+    req.nlh.nlmsg_seq =  netlink_fd[TALK_FD].increase_seq();
     req.g.rtgen_family = AF_PACKET;
 
-    netlink_fd[TALK_FD]->send(&req.nlh);
-    netlink_fd[TALK_FD]->read();
+    netlink_fd[TALK_FD].send(&req.nlh);
+    netlink_fd[TALK_FD].read();
 }
 
 bool kernel_route_add(route rt);
@@ -303,10 +345,10 @@ bool netlink_init() {
     auto addr_sock = std::make_shared<netlink_socket>(netlink_socket(service, RTMGRP_IPV4_IFADDR));
     auto route_sock = std::make_shared<netlink_socket>(netlink_socket(service, RTMGRP_IPV4_ROUTE));
 
-    netlink_fd.push_back(talk_sock);
-    netlink_fd.push_back(link_sock);
-    netlink_fd.push_back(addr_sock);
-    netlink_fd.push_back(route_sock);
+    netlink_fd.push_back(netlink_socket(service, 0));
+    netlink_fd.push_back(netlink_socket(service, RTMGRP_LINK));
+    netlink_fd.push_back(netlink_socket(service, RTMGRP_IPV4_IFADDR));
+    netlink_fd.push_back(netlink_socket(service, RTMGRP_IPV4_ROUTE));
 
     netlink_dump(RTM_GETLINK);
     netlink_dump(RTM_GETADDR);
@@ -316,16 +358,15 @@ bool netlink_init() {
     interface_show();
 #endif
 
-    // netlink_fd[TALK_FD]->async_read();
-    netlink_fd[LINK_GROUP_FD]->async_read();
-    netlink_fd[ADDR_GROUP_FD]->async_read();
-    netlink_fd[ROUTE_GROUP_FD]->async_read();
+    netlink_fd[LINK_GROUP_FD].async_read();
+    netlink_fd[ADDR_GROUP_FD].async_read();
+    netlink_fd[ROUTE_GROUP_FD].async_read();
 
     return true;
 }
 
 bool netlink_close() {
-    for (auto fd : netlink_fd)
+    for (auto fd = netlink_fd.begin(); fd != netlink_fd.end(); fd++)
         fd->close();
 
     netlink_fd.clear();

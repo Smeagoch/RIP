@@ -340,11 +340,6 @@ bool kernel_route_add(route rt);
 bool kernel_route_del(route rt);
 
 bool netlink_init() {
-    auto talk_sock = std::make_shared<netlink_socket>(netlink_socket(service, 0));
-    auto link_sock = std::make_shared<netlink_socket>(netlink_socket(service, RTMGRP_LINK));
-    auto addr_sock = std::make_shared<netlink_socket>(netlink_socket(service, RTMGRP_IPV4_IFADDR));
-    auto route_sock = std::make_shared<netlink_socket>(netlink_socket(service, RTMGRP_IPV4_ROUTE));
-
     netlink_fd.push_back(netlink_socket(service, 0));
     netlink_fd.push_back(netlink_socket(service, RTMGRP_LINK));
     netlink_fd.push_back(netlink_socket(service, RTMGRP_IPV4_IFADDR));

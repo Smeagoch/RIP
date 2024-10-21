@@ -4,6 +4,7 @@
 
 #include "route.hpp"
 #include "interface.hpp"
+#include "system_netlink.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<route>> route_table;
 
@@ -57,34 +58,12 @@ void route_remove_matching(route_selector *sel)
         if (route_match(it->second.get(), sel)) {
             std::cout << "INFO: remove route to " << it->second->dst_address.to_string()
                     << "/" << it->second->prefix << std::endl;
+            if (it->second->type != route_type_static)
+                kernel_route_del(it->second.get());
             it = route_table.erase(it);
         } else {
             it++;
         }
-    }
-}
-
-void route_purge_matching(route_selector *sel)
-{
-    for (auto it = route_table.begin(); it != route_table.end();) {
-        if (route_match(it->second.get(), sel))
-            if (it->second->type == route_type_static) {
-                it->second->ifi_index = 0;
-
-                if (it->second->dst_address.is_v4()) {
-                    it->second->dst_address.to_v4().any();
-                } else if (it->second->dst_address.is_v6()) {
-                    it->second->dst_address.to_v6().any();
-                }
-
-                it->second->timer.cancel();
-
-                it++;
-            } else {
-                it = route_table.erase(it);
-            }
-        else
-            it++;
     }
 }
 

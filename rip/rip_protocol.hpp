@@ -1,6 +1,7 @@
 #ifndef RIP_PROTOCOL_HPP
 #define RIP_PROTOCOL_HPP
 
+#define RTPROT_RIP      189
 #define RIP_PORT        520
 #define RIP_VERSION     2
 

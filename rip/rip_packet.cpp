@@ -4,12 +4,18 @@
 
 #include "rip_protocol.hpp"
 #include "rip_packet.hpp"
+#include "system_netlink.hpp"
 #include "interface.hpp"
 #include "route.hpp"
 
 void rip_packet::set_iface(uint32_t ifi_index)
 {
     this->src_ifi_index = ifi_index;
+}
+
+void rip_packet::set_address(asio::ip::address address)
+{
+    this->src_address = address.to_v4();
 }
 
 void rip_packet::unmarshall(uint8_t *pdu, uint32_t pdu_len)
@@ -45,6 +51,8 @@ void rip_packet::unmarshall(uint8_t *pdu, uint32_t pdu_len)
 
         entry.next_hop_address = asio::ip::address_v4(ntohl(*((uint32_t *) &pdu[offset])));
         offset += sizeof(uint32_t);
+        if (entry.next_hop_address.is_unspecified())
+            entry.next_hop_address = this->src_address;
 
         entry.metric = ntohl(*((uint32_t *) &pdu[offset]));
         offset += sizeof(uint32_t);
@@ -150,7 +158,8 @@ bool rip_packet::handle() {
 
         rt_ptr->metric = entry.metric + 1;
 
-        /* TODO: if is_change need update system route */
+        if (is_change)
+            kernel_route_replace(rt_ptr);
 
         rt_ptr->timer.cancel_one();
         rt_ptr->timer.expires_after(std::chrono::seconds(RIP_EXPIRE_TIME));

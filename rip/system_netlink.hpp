@@ -4,10 +4,12 @@
 #include <iostream>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <asio.hpp>
 
 #include "common.hpp"
+#include "route.hpp"
 
 template <typename Protocol>
 class nl_endpoint
@@ -163,6 +165,9 @@ public:
     bool netlink_talk(struct nlmsghdr *req,
             struct nlmsghdr *reply, size_t replysize);
 };
+
+bool kernel_route_replace(route *rt);
+bool kernel_route_del(route *rt);
 
 bool netlink_init();
 bool netlink_close();

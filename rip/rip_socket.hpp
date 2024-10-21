@@ -17,7 +17,7 @@
 template <typename T = rip_packet, uint32_t port = 520>
 class rip_socket {
 private:
-    struct sockaddr_in src_addr_;
+    struct sockaddr_storage src_addr_;
     struct iovec iov_;
     struct msghdr msg_;
     asio::ip::udp::socket sock_;
@@ -27,7 +27,7 @@ private:
 
     asio::steady_timer update_timer;
 
-    void read_cb(std::size_t length, uint32_t ifi_index);
+    void read_cb(std::size_t length, uint32_t ifi_index, asio::ip::address);
     void update_cb();
 
 public:
@@ -37,7 +37,8 @@ public:
     void open();
     void async_read();
     void update_init();
-    void join_mcast_group(asio::ip::address_v4 local_addr);
+    void join_mcast_group(asio::ip::address local_addr);
+    void leave_mcast_group(asio::ip::address local_addr);
     void close();
 };
 
@@ -52,11 +53,13 @@ rip_socket<T, port>::~rip_socket()
 }
 
 template <typename T, uint32_t port>
-void rip_socket<T, port>::read_cb(std::size_t length, uint32_t ifi_index)
+void rip_socket<T, port>::read_cb(std::size_t length,
+            uint32_t ifi_index, asio::ip::address address)
 {
     T packet;
 
     packet.set_iface(ifi_index);
+    packet.set_address(address);
 
     try {
         packet.unmarshall(this->buf_, length);
@@ -184,6 +187,7 @@ void rip_socket<T, port>::async_read()
             } else {
                 struct cmsghdr* cmsg = nullptr;
                 struct in_pktinfo* pktinfo = nullptr;
+                asio::ip::address src_address;
 
                 std::size_t status = 0;
                 if ((status = recvmsg(sock_.native_handle(), &msg_, 0)) < 0) {
@@ -198,11 +202,18 @@ void rip_socket<T, port>::async_read()
                     }
                 }
 
-                if (pktinfo) {
-                    read_cb(status, pktinfo->ipi_ifindex);
-                } else {
+                if (msg_.msg_namelen == sizeof(struct sockaddr_in))
+                    src_address = asio::ip::address_v4(ntohl(reinterpret_cast<struct sockaddr_in *>(msg_.msg_name)->sin_addr.s_addr));
+                else if (msg_.msg_namelen == sizeof(struct sockaddr_in6))
+                    std::cerr << "WARNING: Processing of ipv6 addresses is not supported" << std::endl;
+                else
+                    std::cerr << "WARNING: Unsupported address" << std::endl;
+
+                if (pktinfo == nullptr)
                     std::cerr << "ERROR: IP_PKTINFO: emply control message" << std::endl;
-                }
+
+                if (pktinfo && !src_address.is_unspecified())
+                    read_cb(status, pktinfo->ipi_ifindex, src_address);
             }
             async_read();
         });
@@ -216,13 +227,25 @@ void rip_socket<T, port>::close()
     this->sock_.close();
 }
 
+/* TODO: need function for ipv6 */
 template <typename T, uint32_t port>
-void rip_socket<T, port>::join_mcast_group(asio::ip::address_v4 local_addr)
+void rip_socket<T, port>::join_mcast_group(asio::ip::address local_addr)
 {
     std::cerr << "INFO: join group : " << local_addr.to_string() << std::endl;
     this->sock_.set_option(asio::ip::multicast::join_group(
         asio::ip::address::from_string(RIP_MCAST_ADDR).to_v4(),
-        local_addr));
+        local_addr.to_v4()));
+}
+
+/* TODO: need function for ipv6 */
+template <typename T, uint32_t port>
+void rip_socket<T, port>::leave_mcast_group(asio::ip::address local_addr)
+{
+    std::cerr << "INFO: leave group : " << local_addr.to_string() << std::endl;
+
+    this->sock_.set_option(asio::ip::multicast::leave_group(
+        asio::ip::address::from_string(RIP_MCAST_ADDR).to_v4(),
+        local_addr.to_v4()));
 }
 
 #endif /* RIP_SOCKET_HPP */

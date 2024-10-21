@@ -11,6 +11,7 @@
 
 struct route;
 
+/* TODO: Opt out of smart pointers */
 extern std::unordered_map<std::string, std::shared_ptr<route>> route_table;
 
 #define route_type_static 0x01  /* static entry for configuration */

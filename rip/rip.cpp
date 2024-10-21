@@ -52,9 +52,6 @@ int main(int argc, char *argv[])
     rip_sock.async_read();
     rip_sock.update_init();
 
-    // if (strlen(buf) != 0)
-    //  std::cout << "no null" << std::endl;
-
     service.run();
 
     return 0;

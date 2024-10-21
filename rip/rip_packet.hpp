@@ -23,6 +23,7 @@ private:
     };
 
     uint32_t src_ifi_index;
+    asio::ip::address_v4 src_address;
 
     uint8_t command;
     uint8_t version;
@@ -33,6 +34,7 @@ public:
     void set_command(uint8_t command) { this->command = command; }
     void set_version(uint8_t version) { this->version = version; }
     void set_iface(uint32_t ifi_index);
+    void set_address(asio::ip::address address);
 
     void unmarshall(uint8_t *pdu, uint32_t pdu_len);
     uint16_t marshall(uint8_t *pdu, uint32_t pdu_len, uint32_t iface_index);

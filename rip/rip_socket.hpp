@@ -28,7 +28,6 @@ private:
     asio::steady_timer update_timer;
 
     void read_cb(std::size_t length, uint32_t ifi_index, asio::ip::address);
-    void update_cb();
 
 public:
     rip_socket(asio::io_service &service_);
@@ -37,6 +36,7 @@ public:
     void open();
     void async_read();
     void update_init();
+    void update();
     void join_mcast_group(asio::ip::address local_addr);
     void leave_mcast_group(asio::ip::address local_addr);
     void close();
@@ -76,7 +76,7 @@ void rip_socket<T, port>::read_cb(std::size_t length,
 }
 
 template <typename T, uint32_t port>
-void rip_socket<T, port>::update_cb()
+void rip_socket<T, port>::update()
 {
     constexpr  std::size_t buff_size = RIP_ENTRY_SIZE * MAX_RIP_ENTRIES + RIP_HDR_SIZE;
     uint8_t buff[buff_size] = {0};
@@ -116,7 +116,7 @@ void rip_socket<T, port>::update_cb()
     packet.set_version(RIP_VERSION);
 
     for (const auto& pair : route_table) {
-        packet.add_entry(pair.second.get());
+        packet.add_entry(pair.second);
 
         if (packet.entry_list_size() == MAX_RIP_ENTRIES) {
             std::cout << "INFO: " << "Sending RIP packet:" << std::endl;
@@ -145,7 +145,7 @@ void rip_socket<T, port>::update_init()
                 if (ec)
                     return;
 
-                this->update_cb();
+                this->update();
 
                 update_init();
             });

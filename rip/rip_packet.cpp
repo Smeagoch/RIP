@@ -123,7 +123,7 @@ bool rip_packet::handle() {
 
         auto rt = route_table.find(entry.dst_address.to_string());
         if (rt != route_table.end()) {
-            rt_ptr = rt->second.get();
+            rt_ptr = rt->second;
             if (rt_ptr->hop < entry.metric + 1)
                 return false;
         }
@@ -131,11 +131,11 @@ bool rip_packet::handle() {
         if (rt_ptr == nullptr) {
             std::cout << "DEBUG: " << "Adding dynamic route to " << entry.dst_address.to_string() 
                     << "/" << route_v4_prefix(entry.subnet_mask) << " metric " << entry.metric << std::endl;
-            auto new_route = std::make_shared<route>(route());
+            route *new_route = new route;
             new_route->dst_address = entry.dst_address;
             new_route->type = route_type_dynamic;
             route_table.insert(std::make_pair(new_route->dst_address.to_v4().to_string(), new_route));
-            rt_ptr = new_route.get();
+            rt_ptr = new_route;
         }
 
         if (rt_ptr->ifi_index != this->src_ifi_index) {

@@ -337,7 +337,7 @@ static void netlink_route_new(struct nlmsghdr *msg)
         if (configuration.is_conf_network(dst_address.to_string(), prefix)) {
             std::cout << "DEBUG: Adding static route to " << dst_address.to_string() << "/" << prefix << std::endl;
 
-            auto new_route = std::make_shared<route>(route());
+            route *new_route = new route;
             new_route->dst_address = dst_address;
             new_route->prefix = prefix;
             new_route->ifi_index = iface->index;
@@ -375,7 +375,7 @@ static void netlink_route_del(struct nlmsghdr *msg)
             route_table.erase(dst_address.to_string());
         } else {
             std::cout << "DEBUG: Replace dynamic route to " << dst_address.to_string() << "/" << (uint32_t)rtm->rtm_dst_len << std::endl;
-            kernel_route_replace(rt->second.get());
+            kernel_route_replace(rt->second);
         }
     }
 }

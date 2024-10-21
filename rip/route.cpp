@@ -6,7 +6,7 @@
 #include "interface.hpp"
 #include "system_netlink.hpp"
 
-std::unordered_map<std::string, std::shared_ptr<route>> route_table;
+std::unordered_map<std::string, route*> route_table;
 
 static bool route_match(route *rt, route_selector *sel)
 {
@@ -55,11 +55,12 @@ uint32_t route_v4_submask(uint32_t prefix)
 void route_remove_matching(route_selector *sel)
 {
     for (auto it = route_table.begin(); it != route_table.end();) {
-        if (route_match(it->second.get(), sel)) {
+        if (route_match(it->second, sel)) {
             std::cout << "INFO: remove route to " << it->second->dst_address.to_string()
                     << "/" << it->second->prefix << std::endl;
             if (it->second->type != route_type_static)
-                kernel_route_del(it->second.get());
+                kernel_route_del(it->second);
+            delete it->second;
             it = route_table.erase(it);
         } else {
             it++;

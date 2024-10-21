@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
     rip_sock.open();
     netlink_init();
     rip_sock.async_read();
+    rip_sock.update();
     rip_sock.update_init();
 
     service.run();

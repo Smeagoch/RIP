@@ -335,9 +335,8 @@ static void netlink_route_new(struct nlmsghdr *msg)
         uint32_t prefix = rtm->rtm_dst_len;
 
         if (configuration.is_conf_network(dst_address.to_string(), prefix)) {
-#ifdef DEBUG
             std::cout << "DEBUG: Adding static route to " << dst_address.to_string() << "/" << prefix << std::endl;
-#endif
+
             auto new_route = std::make_shared<route>(route());
             new_route->dst_address = dst_address;
             new_route->prefix = prefix;
@@ -517,10 +516,6 @@ bool netlink_init() {
     netlink_dump(RTM_GETLINK);
     netlink_dump(RTM_GETADDR);
     netlink_dump(RTM_GETROUTE);
-
-#ifdef DEBUG
-    interface_show();
-#endif
 
     netlink_fd[LINK_GROUP_FD].async_read();
     netlink_fd[ADDR_GROUP_FD].async_read();

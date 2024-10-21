@@ -56,7 +56,7 @@ void rip_packet::unmarshall(uint8_t *pdu, uint32_t pdu_len)
 
         entry.metric = ntohl(*((uint32_t *) &pdu[offset]));
         offset += sizeof(uint32_t);
-        
+
         this->rip_list.push_back(entry);
     }
 }
@@ -124,17 +124,16 @@ bool rip_packet::handle() {
         auto rt = route_table.find(entry.dst_address.to_string());
         if (rt != route_table.end()) {
             rt_ptr = rt->second.get();
-            if (rt_ptr->metric < entry.metric + 1)
+            if (rt_ptr->hop < entry.metric + 1)
                 return false;
         }
 
         if (rt_ptr == nullptr) {
-#ifdef DEBUG
-            std::cout << "DEBUG: " << "Adding new route to " << entry.dst_address.to_string() 
+            std::cout << "DEBUG: " << "Adding dynamic route to " << entry.dst_address.to_string() 
                     << "/" << route_v4_prefix(entry.subnet_mask) << " metric " << entry.metric << std::endl;
-#endif
             auto new_route = std::make_shared<route>(route());
             new_route->dst_address = entry.dst_address;
+            new_route->type = route_type_dynamic;
             route_table.insert(std::make_pair(new_route->dst_address.to_v4().to_string(), new_route));
             rt_ptr = new_route.get();
         }
@@ -156,7 +155,7 @@ bool rip_packet::handle() {
             is_change = true;
         }
 
-        rt_ptr->metric = entry.metric + 1;
+        rt_ptr->hop = entry.metric + 1;
 
         if (is_change)
             kernel_route_replace(rt_ptr);
@@ -170,10 +169,8 @@ bool rip_packet::handle() {
                 
                 if (ec)
                     return;
-#ifdef DEBUG
                 std::cout << "DEBUG: " << "Removing expired route to " << rt_ptr->dst_address.to_string()
                         << " metric " << rt_ptr->metric << std::endl;
-#endif
                 route_table.erase(rt_ptr->dst_address.to_string());
             });
     }
@@ -217,7 +214,8 @@ void rip_packet::print() {
     std::cout << "  Entries: " << this->rip_list.size() << std::endl;
 
     for (const auto &entry : this->rip_list) {
-        std::cout << "    IP: " << entry.dst_address.to_string()
+        std::cout << "    IP: " << entry.dst_address.to_string() 
+                << "/" << route_v4_prefix(entry.subnet_mask)
                 << " Metric: " << entry.metric << std::endl;
     }
 }

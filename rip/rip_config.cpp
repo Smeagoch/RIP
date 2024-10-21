@@ -22,7 +22,6 @@ void rip_config::load(const std::string& filename) {
     }
 }
 
-#ifdef DEBUG
 void rip_config::print()
 {
     for (auto net : networks) {
@@ -34,7 +33,6 @@ void rip_config::print()
         std::cout << "passive-interfaces " << iface_name << std::endl;
     }
 }
-#endif
 
 void rip_config::parse_line(const std::string& line) {
     std::istringstream iss(line);

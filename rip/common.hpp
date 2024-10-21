@@ -5,8 +5,6 @@
 
 #include "rip_protocol.hpp"
 
-#define DEBUG
-
 template<typename T, uint32_t port>
 class rip_socket;
 class rip_packet;

@@ -69,10 +69,8 @@ void rip_socket<T, port>::read_cb(std::size_t length,
     }
     
 
-#ifdef DEBUG
-    std::cout << "DEBUG: " << "Receive RIP packet:" << std::endl;
+    std::cout << "INFO: " << "Receive RIP packet from "<< address << ":" << std::endl;
     packet.print();
-#endif
 
     packet.handle();
 }
@@ -108,10 +106,7 @@ void rip_socket<T, port>::update_cb()
                 }
                 if (len == 0)
                     return;
-#ifdef DEBUG
-                std::cout << "DEBUG: Sending rip packet to " << iface->name
-                        << " (len " << len << ")" << std::endl;
-#endif
+
                 this->sock_.set_option(asio::ip::multicast::outbound_interface(iface->address));
                 asio::ip::udp::endpoint multicast_enpoint(asio::ip::make_address(RIP_MCAST_ADDR), RIP_PORT);
                 this->sock_.send_to(asio::const_buffer(buff, len), multicast_enpoint);
@@ -124,13 +119,18 @@ void rip_socket<T, port>::update_cb()
         packet.add_entry(pair.second.get());
 
         if (packet.entry_list_size() == MAX_RIP_ENTRIES) {
+            std::cout << "INFO: " << "Sending RIP packet:" << std::endl;
+            packet.print();
             std::for_each(interface_list.begin(), interface_list.end(), send);
             packet.entry_list_clear();
         }
     }
 
-    if (packet.entry_list_size() != 0)
+    if (packet.entry_list_size() != 0) {
+        std::cout << "INFO: " << "Sending RIP packet:" << std::endl;
+        packet.print();
         std::for_each(interface_list.begin(), interface_list.end(), send);
+    }
 }
 
 template <typename T, uint32_t port>
@@ -231,7 +231,7 @@ void rip_socket<T, port>::close()
 template <typename T, uint32_t port>
 void rip_socket<T, port>::join_mcast_group(asio::ip::address local_addr)
 {
-    std::cerr << "INFO: join group : " << local_addr.to_string() << std::endl;
+    std::cerr << "INFO: join multicast group: " << local_addr.to_string() << std::endl;
     this->sock_.set_option(asio::ip::multicast::join_group(
         asio::ip::address::from_string(RIP_MCAST_ADDR).to_v4(),
         local_addr.to_v4()));

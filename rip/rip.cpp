@@ -40,9 +40,6 @@ int main(int argc, char *argv[])
 { 
 
     configuration.load(RIP_CONF_FILE);
-#ifdef DEBUG
-    configuration.print();
-#endif
 
     asio::signal_set sig(service, SIGINT, SIGTERM);
     sig.async_wait(signal_handler);

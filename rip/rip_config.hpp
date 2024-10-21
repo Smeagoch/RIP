@@ -24,9 +24,7 @@ private:
     void parse_network(const std::string& network_str);
 public:
     void load(const std::string& filename);
-#ifdef DEBUG    
     void print();
-#endif
     bool is_passive_iface(const char *ifname);
     bool is_conf_network(std::string address, uint32_t prefix_length);
 };

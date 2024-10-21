@@ -10,18 +10,6 @@
 
 std::list<interface*> interface_list;
 
-#ifdef DEBUG
-void interface_show()
-{
-    std::for_each(interface_list.begin(), interface_list.end(), [](interface *iface) {
-        std::cout << "DEBUG: " << "Interface configuration:" << std::endl;
-        std::cout << "  interface : " << iface->name << std::endl;
-        std::cout << "    index: " << iface->index << std::endl;
-        std::cout << "    address: " << iface->address.to_string() << std::endl;;
-    });
-}
-#endif
-
 interface *interface_get_by_name(const char *iface_name, bool create)
 {
     interface *iface_ptr = nullptr;

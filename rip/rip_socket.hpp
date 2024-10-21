@@ -136,6 +136,7 @@ void rip_socket<T, port>::update()
 template <typename T, uint32_t port>
 void rip_socket<T, port>::update_init()
 {
+        update();
         this->update_timer.expires_after(std::chrono::seconds(RIP_UPDATE_TIME));
         this->update_timer.async_wait(
             [this](const std::error_code &ec){

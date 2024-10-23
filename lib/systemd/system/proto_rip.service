@@ -1,0 +1,14 @@
+[Unit]
+Description=Routing Information protocol
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/proto_rip
+Restart=on-failure
+TimeoutStopSec=60s
+TimeoutStartSec=60s
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

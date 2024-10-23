@@ -25,20 +25,13 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y libasio-dev
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
-    - name: Build
+    - name: Build and package
       # Build your program with the given configuration
-      run: |
-          cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-          make package
+      run: sh build.sh
 
     - name: Upload deb package
-      uses: actions/upload-artifacts@v3
+      uses: actions/upload-artifacts@v4
       with:
         name: proto_rip_dev_package
-        path: ~/*.deb
+        path: build/*.deb
 

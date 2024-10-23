@@ -37,7 +37,7 @@ set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
 install(TARGETS proto_rip RUNTIME DESTINATION /usr/bin/)
-install(FILES etc/rip/rip.conf DESTINATION /etc/rip/)
+install(FILES etc/rip.conf DESTINATION /etc/rip/)
 install(FILES lib/systemd/system/proto_rip.service DESTINATION /lib/systemd/system/)
 
 include(CPack)

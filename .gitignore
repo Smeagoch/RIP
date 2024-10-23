@@ -1,6 +1,10 @@
 cmake_install.cmake
 CMakeCache.txt
 Makefile
+CMakeFiles*
 proto_rip
+*.deb
+_CPack*
+CPack*
+install_manifest.txt
 .vscode/
-CMakeFiles/
